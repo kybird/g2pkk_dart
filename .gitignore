@@ -1,0 +1,19 @@
+# Flutter / Dart
+.dart_tool/
+build/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+.metadata
+
+# Coverage / test artifacts
+coverage/
+
+# Local temp debug scripts
+tmp_*.dart
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
