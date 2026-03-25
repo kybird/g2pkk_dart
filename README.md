@@ -1,151 +1,48 @@
-# g2pkk
+# g2pkk (경량화 버전)
 
-A Korean Grapheme-to-Phoneme conversion library for Dart.
-This is a port of the Python [g2pK](https://github.com/kyubyong/g2pK) library.
+Dart 환경을 위한 한국어 형태소-음소 변환(G2P) 라이브러리.
+파이썬 [g2pkk](https://github.com/harmlessman/g2pkk) 라이브러리의 Dart 포팅 버전.
 
-## Features
+> **주의: 경량화 버전**
+>
+> 원본 라이브러리를 간소화한 버전으로 다음 제한 사항이 있음:
+> * **Mecab 형태소 분석기**: 기본 구조만 포팅됨. 품사 태깅을 통한 정밀한 용언/명사 구분 및 변환 기능이 정상 동작하지 않음.
+> * **영어 발음 변환 (CMUDict)**: 사전 용량 문제로 전체 사전 대신 필수 단어만 포함된 축소 버전을 사용함.
 
-- Convert Korean text to phonetic pronunciation
-- Apply standard Korean pronunciation rules
-- Handle special cases and idioms
-- Support for descriptive (casual) pronunciation
-- **Number conversion** (Arabic numerals to Korean words)
-- **English to Hangul conversion** (with CMU dict)
+## 주요 기능
 
-## Installation
+- 한국어 텍스트 발음 변환 (예: `굳이 -> 구지`, `넓다 -> 널따`)
+- 기본 한국어 발음 규칙 및 관용구 적용
+- 숫자 발음 변환
+- 영어 단어 한글 발음 변환 (축소된 CMU dict 사용)
 
-Add this to your `pubspec.yaml`:
-
-```yaml
-dependencies:
-  g2pkk: ^0.1.0
-```
-
-## Usage
+## 사용법
 
 ```dart
 import 'package:g2pkk/g2pkk.dart';
 
 void main() async {
-  // Basic usage (without English conversion)
   final g2p = G2p();
 
+  // 기본 변환
   print(g2p.call('하나')); // 하나
-  print(g2p.call('한글')); // 한글
+  print(g2p.call('굳이')); // 구지
+  
+  // 숫자 변환
+  print(g2p.call('123')); // 백이십삼
 
-  // Idioms are applied automatically
-  print(g2p.call('문고리')); // 문꼬리
-  print(g2p.call('갈등')); // 갈뜽
-
-  // Number conversion (digit by digit)
-  print(g2p.call('123')); // 이리삼 (일이삼 with pronunciation rules)
-  print(g2p.call('3개')); // 삼개
-
-  // With English conversion (requires cmudict.json)
+  // 영어 발음 변환 (사전 파일 필요)
   final g2pWithEng = await G2p.create(cmuDictPath: 'path/to/cmudict.json');
   print(g2pWithEng.call('game을 했다')); // 게이믈 핻따
-  print(g2pWithEng.call('file 3개')); // 파일 삼개
-  print(g2pWithEng.call('computer')); // 컴퓨터
-
-  // With options
-  print(g2p.call('예의', descriptive: true)); // Descriptive mode
-  print(g2p.call('개기', groupVowels: true)); // Normalize vowels
-  print(g2p.call('한글', toSyl: false)); // Keep as jamo
 }
 ```
 
-## API
+## 한계점
 
-### `G2p.call(string, options)`
+파이썬 원본 대비 주요 차이점:
+- 형태소 분석 기능 부재로 인해 동사/형용사의 경음화 규칙 작동이 제한적임.
+- 영어 발음 변환은 내장된 축소판 `cmudict.json` 단어들에 한정됨. (전체 사전 사용 시 `cmuDictPath` 옵션으로 직접 로드 필요)
 
-Convert Korean text to phonetic pronunciation.
-
-**Parameters:**
-- `string` (String): Input Korean text
-- `descriptive` (bool, default: false): Apply descriptive pronunciation rules
-- `verbose` (bool, default: false): Print transformation steps
-- `groupVowels` (bool, default: false): Normalize similar vowels (ㅐ→ㅔ, etc.)
-- `toSyl` (bool, default: true): Compose jamo back to syllables
-
-### `G2p.create(options)`
-
-Create a G2p instance asynchronously with optional CMU dict for English conversion.
-
-```dart
-final g2p = await G2p.create(cmuDictPath: 'path/to/cmudict.json');
-```
-
-### English Conversion
-
-```dart
-import 'package:g2pkk/g2pkk.dart';
-
-// Load CMU dict
-final cmu = await CmuDict.load('cmudict.json');
-
-// Convert English in text
-print(convertEng('game을 했다', cmu)); // 게임을 했다
-```
-
-### Number Conversion
-
-```dart
-import 'package:g2pkk/g2pkk.dart';
-
-// Process individual numbers
-print(processNum('123', sino: true)); // 백이십삼
-print(processNum('3', sino: false));  // 세 (pure Korean)
-
-// Convert numbers in text
-print(convertNum('3년')); // 삼년
-```
-
-### Jamo Utilities
-
-```dart
-import 'package:g2pkk/g2pkk.dart';
-
-// Decompose syllable to jamo
-String jamo = h2j('한'); // '한'
-String jamoStr = h2jString('한글'); // '한글'
-
-// Compose jamo to syllable
-String syllable = j2h('한'); // '한'
-
-// Compose jamo string
-String text = compose('한글'); // '한글'
-```
-
-## Implemented Rules
-
-This Dart port implements:
-
-1. **Idioms** - Special pronunciation for common words
-2. **Special Rules** - Vowel/consonant transformations
-3. **Regular Table** - Batchim + onset combinations
-4. **Link Rules** - Cross-syllable linking
-5. **Composition** - Jamo to syllable assembly
-6. **Number Conversion** - Arabic numerals to Korean words
-7. **English Conversion** - English words to Korean pronunciation
-
-## Differences from Python Version
-
-This version does **not** include:
-- Mecab annotation (requires external morphological analyzer)
-
-Note: Without mecab annotation, bound nouns (의존명사) cannot be automatically detected,
-so all numbers are converted digit-by-digit using sino-Korean numerals.
-
-## CMU Dict
-
-For English to Hangul conversion, you need the CMU pronunciation dictionary.
-The package includes a `cmudict.json` file in the `lib/` directory.
-
-To use your own dictionary:
-```dart
-final g2p = await G2p.create(cmuDictPath: 'path/to/your/cmudict.json');
-```
-
-## License
+## 라이선스
 
 MIT License

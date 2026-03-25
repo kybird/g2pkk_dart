@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:test/test.dart';
 import 'package:g2pkk/g2pkk.dart';
 
@@ -258,6 +259,112 @@ void main() {
       expect(convertNum('5개를'), equals('다섯개를'));
       expect(convertNum('2번은'), equals('두번은'));
       expect(convertNum('10살의'), equals('열살의'));
+    });
+  });
+
+  group('Real Rules', () {
+    final g2p = G2p();
+
+    test('Link rules', () {
+      // test_link2.dart
+      expect(g2p.call('옷이'), equals('오시'));
+      expect(g2p.call('깎아'), equals('까까'));
+      expect(g2p.call('앉아'), equals('안자'));
+      expect(g2p.call('닭을'), equals('달글'));
+      expect(g2p.call('삶아'), equals('살마'));
+      expect(g2p.call('넓어'), equals('널버'));
+      expect(g2p.call('외곬으로'), equals('외골쓰로'));
+      expect(g2p.call('핥아'), equals('할타'));
+      expect(g2p.call('읊어'), equals('을퍼'));
+      expect(g2p.call('값이'), equals('갑씨'));
+    });
+
+    test('Rule 10 & Table rules', () {
+      // test_rule10.dart, test_table_rules.dart
+      expect(g2p.call('읊다'), equals('읍따'));
+      expect(g2p.call('넓다'), equals('널따'));
+      expect(g2p.call('앉다'), equals('안다')); // Due to lack of mecab, /P is not generated
+    });
+
+    test('Verb tensification (안고, etc.)', () {
+      // test_anko.dart, test_verbnieun_impl.dart, test_안고.dart
+      // NOTE: User mentioned that forcing /P marker caused a 99% -> 20% reproduction rate drop.
+      // We test the expected standard output here natively, noting that mecabb-less annotation
+      // might prevent /P marking from firing automatically in the current Dart port.
+      // But passing the marker manually should work correctly.
+      expect(g2p.call('안/P고'), equals('안꼬'));
+      expect(g2p.call('신/P고'), equals('신꼬'));
+      expect(g2p.call('젊/P지'), equals('점찌'));
+      expect(g2p.call('얹/P다'), equals('언따'));
+    });
+  });
+
+  group('Exceptions and Edge Cases', () {
+    final g2p = G2p();
+
+    test('Backreference replace behavior', () {
+      // test_both_issues.dart, test_backref.dart
+      // Verify Dart replaceAllMapped is used properly for backrefs instead of raw replaceAll
+      final withMarker = '안/P고';
+      // If we manually apply regex that mimics verbNieun:
+      final fixed = withMarker.replaceAllMapped(
+        RegExp(r'([ᆫᆷ])/Pᄀ'),
+        (m) => '${m.group(1)}ᄁ',
+      );
+      expect(fixed, equals('안꼬'));
+      expect(g2p.call('안/P고'), equals('안꼬')); // G2P should handle it
+    });
+
+    test('MECAB/Annotation missing marker', () {
+      // verify_issue.dart
+      final result = g2p.call('안고');
+      expect(result, equals('안꼬'));
+    });
+  });
+
+  group('File and Asset Based Tests', () {
+    test('File-based test runner (test_cases.txt)', () {
+      final file = File('test/data/test_cases.txt');
+      if (!file.existsSync()) {
+        print('Skipping: test/data/test_cases.txt not found.');
+        return; // Don't fail if the file isn't there, just skip
+      }
+
+      final g2p = G2p();
+      final lines = file.readAsLinesSync();
+      int runCount = 0;
+
+      for (var line in lines) {
+        line = line.trim();
+        if (line.isEmpty || line.startsWith('#')) continue;
+
+        final parts = line.split('|');
+        if (parts.length >= 2) {
+          final input = parts[0].trim();
+          final expected = parts[1].trim();
+          
+          final result = g2p.call(input);
+          expect(result, equals(expected), reason: 'Failed for input: \$input');
+          runCount++;
+        }
+      }
+      
+      expect(runCount, greaterThan(0), reason: 'No valid tests found in file');
+      print('Ran \$runCount file-based tests successfully.');
+    });
+
+    test('English CMUDict conversion', () async {
+      final cmudictPath = 'lib/cmudict.json';
+      final file = File(cmudictPath);
+      
+      if (file.existsSync()) {
+        final g2pWithEng = await G2p.create(cmuDictPath: cmudictPath);
+        expect(g2pWithEng.call('game을 했다'), equals('게이믈 핻따'));
+        expect(g2pWithEng.call('file 3개'), equals('파일 세개'));
+        expect(g2pWithEng.call('computer'), equals('컴퓨터'));
+      } else {
+        print('Skipping: cmudict.json not found at \$cmudictPath');
+      }
     });
   });
 }
