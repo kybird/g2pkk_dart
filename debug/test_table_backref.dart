@@ -4,20 +4,20 @@ void main() {
   final g2p = G2p();
   final inp = '안고';
   
-  print("Testing table rule backreference handling:\n");
-  print("Input: $inp\n");
+  print('Testing table rule backreference handling:\n');
+  print('Input: $inp\n');
   
   // Find the rule for ᆫᄀ
   for (final entry in g2p.table) {
     if (entry.pattern.contains('ᆫ') && entry.pattern.contains('ᄀ') && !entry.pattern.contains('ᆬ')) {
-      print("Pattern: ${entry.pattern}");
-      print("Replacement: ${entry.replacement}");
-      print("Rule IDs: ${entry.ruleIds}\n");
+      print('Pattern: ${entry.pattern}');
+      print('Replacement: ${entry.replacement}');
+      print('Rule IDs: ${entry.ruleIds}\n');
       
       final testInp = 'ᆫ( ?)ᄀ';
       final testReplacement = entry.replacement;
-      print("Test pattern: $testInp");
-      print("Test replacement: $testReplacement");
+      print('Test pattern: $testInp');
+      print('Test replacement: $testReplacement');
       
       // Test with actual match
       final matchInp = 'ᆫᄀ';
@@ -31,8 +31,8 @@ void main() {
           return result;
         },
       );
-      print("Result: $result");
-      print("Expected: Should be some transformation\n");
+      print('Result: $result');
+      print('Expected: Should be some transformation\n');
     }
   }
 }

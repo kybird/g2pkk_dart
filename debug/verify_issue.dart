@@ -1,5 +1,4 @@
 import 'package:g2pkk/g2pkk.dart';
-import 'package:g2pkk/src/jamo.dart';
 import 'package:g2pkk/src/special.dart';
 
 void main() {

@@ -1,4 +1,3 @@
-import 'package:g2pkk/g2pkk.dart';
 
 void main() {
   // Check the rule table entry for ᆹᄋ

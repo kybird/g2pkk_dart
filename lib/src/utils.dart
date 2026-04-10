@@ -4,11 +4,11 @@ import 'jamo.dart';
 
 /// Rule entry from table.csv
 class RuleEntry {
+
+  const RuleEntry(this.pattern, this.replacement, this.ruleIds);
   final String pattern;
   final String replacement;
   final List<String> ruleIds;
-
-  const RuleEntry(this.pattern, this.replacement, this.ruleIds);
 }
 
 /// Parse the rule table from CSV format.

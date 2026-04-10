@@ -262,9 +262,9 @@ String _phonemesToHangul(List<String> phonemes) {
 
 /// CMU Dictionary holder
 class CmuDict {
-  final Map<String, List<String>> _dict;
 
   CmuDict._(this._dict);
+  final Map<String, List<String>> _dict;
 
   /// Load CMU dictionary from JSON file
   static Future<CmuDict> load(String filePath) async {

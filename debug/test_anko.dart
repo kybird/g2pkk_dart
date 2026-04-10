@@ -1,5 +1,4 @@
 import 'package:g2pkk/g2pkk.dart';
-import 'package:g2pkk/src/jamo.dart';
 
 void main() {
   final g2p = G2p();

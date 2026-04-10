@@ -1,24 +1,23 @@
 import 'package:g2pkk/g2pkk.dart';
-import 'package:g2pkk/src/jamo.dart';
 
 void main() {
-  print("=== Testing current verbNieun implementation ===\n");
+  print('=== Testing current verbNieun implementation ===\n');
   
   final g2p = G2p();
   
   // Test the special rules pipeline
   final inp = '안/P고';
-  print("Input: $inp\n");
+  print('Input: $inp\n');
   
   // Apply special rules one by one
-  print("Applying special rules in sequence:");
+  print('Applying special rules in sequence:');
   String current = inp;
   
   // Test verbNieun specifically
-  print("\nBefore verbNieun: $current");
+  print('\nBefore verbNieun: $current');
   current = verbNieunTest(current, false, false);
-  print("After verbNieun: $current");
-  print("Expected: 안꼬");
+  print('After verbNieun: $current');
+  print('Expected: 안꼬');
 }
 
 // Copy of verbNieun from special.dart for testing
