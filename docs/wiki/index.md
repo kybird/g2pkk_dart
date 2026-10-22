@@ -19,6 +19,7 @@ tags: [index]
 
 | 패턴 | 설명 | 별칭 |
 |------|------|------|
+| [[dependency-injection-over-ffi-binding]] | 순수 Dart 라이브러리가 네이티브(FFI) 라이브러리의 기능을 필요로 할 때, | FFI 하드 의존 회피, MorphAnalyzer 주입 |
 
 ---
 
@@ -39,7 +40,7 @@ tags: [index]
 ## Statistics
 
 - Total concepts: 1
-- Total patterns: 0
+- Total patterns: 1
 - Total anti-patterns: 0
 - Total answers: 0
 - Last updated: 2026-10-22

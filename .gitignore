@@ -17,3 +17,6 @@ tmp_*.dart
 .vscode/
 .DS_Store
 Thumbs.db
+
+# llm-wiki local search query log (regenerated on every search)
+docs/raw/search-queries.jsonl
