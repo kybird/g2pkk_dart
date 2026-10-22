@@ -279,6 +279,13 @@ void main() {
       expect(g2p.call('값이'), equals('갑씨'));
     });
 
+    test('Saisiot compound before 이: ㄴ insertion, not liaison', () {
+      // 나랏일 = 나랏 + 일: ㄴ 첨가 후 비음화 -> [나란닐] (제4항, 제20항)
+      expect(g2p.call('나랏일'), equals('나란닐'));
+      // Contrast: 옷 + 이(조사) is plain liaison -> [오시]
+      expect(g2p.call('옷이'), equals('오시'));
+    });
+
     test('Rule 10 & Table rules', () {
       // test_rule10.dart, test_table_rules.dart
       expect(g2p.call('읊다'), equals('읍따'));
@@ -296,6 +303,73 @@ void main() {
       expect(g2p.call('신/P고'), equals('신꼬'));
       expect(g2p.call('젊/P지'), equals('점찌'));
       expect(g2p.call('얹/P다'), equals('언따'));
+    });
+  });
+
+  group('Mecab annotation', () {
+    test('annotate injects markers from POS tags (g2pkk port)', () {
+      String annotated(String input, List<(String, String)> tokens) =>
+          annotate(input, _FakeAnalyzer(tokens));
+
+      // 용언 어간(V) + 비음/ㄹ받침 -> /P (제23항 경음화 트리거)
+      expect(annotated('안고', [('안', 'VV'), ('고', 'EF')]), equals('안/P고'));
+
+      // 단위성 의존명사 NNBC -> /B (순우리말 수사 트리거)
+      expect(annotated('3개', [('3', 'SN'), ('개', 'NNBC')]), equals('3개/B'));
+
+      // 조사 의 + J -> /J
+      expect(
+          annotated('나의 집', [('나', 'NP'), ('의', 'JKG'), ('집', 'NNG')]),
+          equals('나의/J 집'));
+
+      // 어미(E) + ㄹ 받침 -> /E (ㄹ 탈락/경음화 트리거)
+      expect(annotated('갈걸', [('갈걸', 'EF')]), equals('갈걸/E'));
+
+      // 복합 태그는 '+' 마지막 세그먼트 기준 (XSV+VV -> V)
+      expect(annotated('안고', [('안', 'XSV+VV'), ('고', 'EC')]),
+          equals('안/P고'));
+    });
+
+    test('annotate keeps alignment across spaces', () {
+      expect(
+          annotate('앉다 신다', _FakeAnalyzer(
+              [('앉', 'VV'), ('다', 'EF'), ('신', 'VV'), ('다', 'EF')])),
+          equals('앉/P다 신/P다'));
+    });
+
+    test('annotate returns input unchanged when tokens do not reassemble it', () {
+      // 토큰 합성('옷') != 공백 제거 원문('옷이') -> 안전장치 발동
+      expect(annotate('옷이', _FakeAnalyzer([('옷', 'NNG')])),
+          equals('옷이'));
+    });
+
+    test('G2p with analyzer: /P drives tensification without hardcodes', () {
+      final analyzer = _MappingAnalyzer({
+        '앉다': [('앉', 'VV'), ('다', 'EF')],
+        '안고': [('안', 'VV'), ('고', 'EC')],
+        '3개': [('3', 'SN'), ('개', 'NNBC')],
+      });
+      final g2pMecab = G2p(mecab: analyzer);
+
+      expect(g2pMecab.call('앉다'), equals('안따'));
+      expect(g2pMecab.call('안고'), equals('안꼬'));
+      expect(g2pMecab.call('3개'), equals('세개'));
+    });
+
+    test('G2p without analyzer keeps mecab-less behavior', () {
+      final g2p = G2p();
+      expect(g2p.call('앉다'), equals('안다'));
+      // 안전장치: 분석 결과가 원문과 안 맞으면 원문 그대로 진행
+      final g2pMismatch =
+          G2p(mecab: _MappingAnalyzer({'옷이': [('옷', 'NNG')]}));
+      expect(g2pMismatch.call('옷이'), equals('오시'));
+    });
+
+    test('idioms still win over mecab analysis', () {
+      final g2pMecab = G2p(mecab: _MappingAnalyzer({
+        '나란닐': [('나란닐', 'NNG')],
+      }));
+      expect(g2pMecab.call('나랏일'), equals('나란닐'));
     });
   });
 
@@ -367,4 +441,25 @@ void main() {
       }
     });
   });
+}
+
+/// Fake analyzer returning a fixed token list regardless of input.
+class _FakeAnalyzer implements MorphAnalyzer {
+  _FakeAnalyzer(this.tokens);
+
+  final List<(String, String)> tokens;
+
+  @override
+  List<(String, String)> pos(String text) => tokens;
+}
+
+/// Fake analyzer keyed by input string, mimicking per-call analysis.
+class _MappingAnalyzer implements MorphAnalyzer {
+  _MappingAnalyzer(this.table);
+
+  final Map<String, List<(String, String)>> table;
+
+  @override
+  List<(String, String)> pos(String text) =>
+      table[text] ?? const <(String, String)>[];
 }

@@ -76,58 +76,73 @@ String _normalizeOnsetPattern(String onset) {
   return out;
 }
 
-String annotateLite(String text) {
-  const targetFinals = {'ᆫ', 'ᆬ', 'ᆷ', 'ᆱ', 'ᆰ', 'ᆲ', 'ᆴ'};
-  const triggerOnsets = {'ᄀ', 'ᄃ', 'ᄉ', 'ᄌ'};
-  const likelyEndings = {
-    '고',
-    '게',
-    '기',
-    '다',
-    '지',
-    '자',
-    '죠',
-    '서',
-    '시',
-    '소',
-  };
+/// Morphological analyzer contract, mirroring python-mecab-ko's `pos()`.
+///
+/// Implementations return `(surface, tag)` pairs per morpheme. The tags use
+/// mecab-ko conventions (e.g. VV, EF, JKS, NNBC); compound tags such as
+/// `VV+EF` are allowed. Concatenating all surfaces must yield the input with
+/// spaces removed — otherwise [annotate] ignores the analysis and keeps the
+/// input untouched.
+abstract interface class MorphAnalyzer {
+  /// Analyze [text] into (surface, tag) morpheme pairs.
+  List<(String, String)> pos(String text);
+}
 
-  final chars = text.split('');
-  final out = StringBuffer();
-
-  for (int i = 0; i < chars.length; i++) {
-    final current = chars[i];
-    out.write(current);
-
-    if (!_isHangulSyllable(current) || i + 1 >= chars.length) {
-      continue;
-    }
-
-    final next = chars[i + 1];
-    if (!_isHangulSyllable(next) || !likelyEndings.contains(next)) {
-      continue;
-    }
-
-    final curJamo = h2j(current);
-    if (curJamo.length < 3 || !targetFinals.contains(curJamo[2])) {
-      continue;
-    }
-
-    final nextJamo = h2j(next);
-    if (nextJamo.isEmpty || !triggerOnsets.contains(nextJamo[0])) {
-      continue;
-    }
-
-    out.write('/P');
+/// Port of the Python g2pkk `annotate()`: POS-based marker injection.
+///
+/// Given morphemes from [mecab], appends rule-trigger markers after the last
+/// character of eligible morphemes:
+/// - `의` carrying a josa tag (J) -> `/J`
+/// - an ending (E) with final `ㄹ` -> `/E`
+/// - a predicate stem (V) with final `ㄴ, ㄵ, ㅁ, ㄹㅁ, ㄺ, ㄼ, ㄾ` -> `/P`
+/// - a unit-bound noun (NNBC) -> `/B`
+///
+/// Markers are consumed by the special rules (`verbNieun`,
+/// `modifyingRieul`, ...), numeral conversion (`/B`), and finally stripped.
+/// Returns [string] unchanged when the analysis does not reassemble it.
+String annotate(String string, MorphAnalyzer mecab) {
+  final tokens = mecab.pos(string);
+  if (string.replaceAll(' ', '') != tokens.map((t) => t.$1).join()) {
+    return string;
   }
 
+  // One tag letter per character, placed at each morpheme's last character.
+  final tagSeq = StringBuffer();
+  for (final (surface, rawTag) in tokens) {
+    var tag = rawTag.split('+').last;
+    tag = tag.isEmpty ? '_' : (tag == 'NNBC' ? 'B' : tag[0]);
+    tagSeq.write('_' * (surface.length - 1) + tag);
+  }
+  var tags = tagSeq.toString();
+
+  // Re-insert blanks so tags align 1:1 with the original string.
+  for (int i = 0; i < string.length; i++) {
+    if (string[i] == ' ') {
+      tags = '${tags.substring(0, i)} ${tags.substring(i)}';
+    }
+  }
+
+  final out = StringBuffer();
+  for (int i = 0; i < string.length; i++) {
+    final char = string[i];
+    out.write(char);
+    final tag = i < tags.length ? tags[i] : '';
+    if (tag == 'J') {
+      if (char == '의') out.write('/J');
+    } else if (tag == 'E') {
+      if (_lastJamo(char) == 'ᆯ') out.write('/E');
+    } else if (tag == 'V') {
+      if ('ᆫᆬᆷᆱᆰᆲᆴ'.contains(_lastJamo(char))) out.write('/P');
+    } else if (tag == 'B') {
+      out.write('/B');
+    }
+  }
   return out.toString();
 }
 
-bool _isHangulSyllable(String char) {
-  if (char.isEmpty) return false;
-  final code = char.codeUnitAt(0);
-  return code >= 0xAC00 && code <= 0xD7A3;
+String _lastJamo(String char) {
+  final jamo = h2j(char);
+  return jamo.isEmpty ? '' : jamo[jamo.length - 1];
 }
 
 /// Parse idioms from text format.

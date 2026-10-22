@@ -131,6 +131,7 @@ const _defaultIdioms = '''
 베갯잇===베갠닏
 깻잎===깬닙
 나뭇잎===나문닙
+나랏일===나란닐
 도리깻열===도리깬녈
 뒷윷===뒨뉻
 
@@ -199,15 +200,26 @@ class G2p {
     required this.idioms,
     required this.table,
     this.cmu,
+    this.mecab,
   });
 
   /// Create a simple G2p instance without English conversion
+  ///
+  /// [mecab]: optional morphological analyzer (mecab-ko POS tags). When
+  /// provided, the pipeline annotates morpheme boundaries before the
+  /// pronunciation rules so that verb tensification (/P), ㄹ-ending rules
+  /// (/E), josa 의 (/J) and unit-bound noun numerals (/B) fire from real
+  /// morphology instead of heuristics. Without it the converter stays in
+  /// mecab-less mode, which matches the previous behavior exactly.
   G2p({
     String? idiomsContent,
     String? tableContent,
+    MorphAnalyzer? mecab,
   })  : idioms = parseIdioms(idiomsContent ?? _defaultIdioms),
         table = parseTable(tableContent ?? _defaultTable),
-        cmu = null;
+        cmu = null,
+        mecab = mecab;
+
   /// List of idioms (pattern, replacement)
   final List<(String, String)> idioms;
 
@@ -216,6 +228,9 @@ class G2p {
 
   /// CMU pronunciation dictionary for English words
   final CmuDict? cmu;
+
+  /// Optional morphological analyzer used for POS-based annotation
+  final MorphAnalyzer? mecab;
 
   /// Create a new G2p instance with optional custom idioms, table, and CMU dict.
   ///
@@ -233,6 +248,7 @@ class G2p {
     String? idiomsContent,
     String? tableContent,
     String? cmuDictPath,
+    MorphAnalyzer? mecab,
   }) async {
     CmuDict? cmu;
     if (cmuDictPath != null) {
@@ -247,6 +263,7 @@ class G2p {
       idioms: parseIdioms(idiomsContent ?? _defaultIdioms),
       table: parseTable(tableContent ?? _defaultTable),
       cmu: cmu,
+      mecab: mecab,
     );
   }
 
@@ -324,8 +341,12 @@ class G2p {
       string = convertEng(string, cmu!);
     }
 
-    // Step 3: Annotation requires mecab, not implemented in core version
-    // Keep mecab-less behavior stable; rely on targeted lexical exceptions.
+    // Step 3: Morpheme annotation via injected analyzer (mecab).
+    // Skipped when no analyzer is set, or when the analysis does not
+    // reassemble the input — annotate() falls back to the raw string.
+    if (mecab != null) {
+      string = annotate(string, mecab!);
+    }
 
     // Step 4: Spell out Arabic numbers
     string = convertNum(string);
