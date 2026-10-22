@@ -99,6 +99,12 @@ abstract interface class MorphAnalyzer {
 ///
 /// Markers are consumed by the special rules (`verbNieun`,
 /// `modifyingRieul`, ...), numeral conversion (`/B`), and finally stripped.
+///
+/// Beyond the Python port, this also inserts a word boundary (space) after an
+/// adverb (M*) whose coda is a ㄷ-series consonant when the next content
+/// morpheme starts with a vowel — 제9항·제15항: 못 알아먹는다[모다라멍는다],
+/// while 옷이[오시] (josa, 제13항) and 나랏일[나란닐] (compound, 제29항)
+/// stay on the in-word linking path.
 /// Returns [string] unchanged when the analysis does not reassemble it.
 String annotate(String string, MorphAnalyzer mecab) {
   final tokens = mecab.pos(string);
@@ -122,6 +128,41 @@ String annotate(String string, MorphAnalyzer mecab) {
     }
   }
 
+  // 표준 발음법 제9항·제15항: 부사의 ㄷ류 받침(ㄷ,ㅅ,ㅆ,ㅈ,ㅊ,ㅌ)은 뒤 말이
+  // 모음으로 시작하면 대표음 [ㄷ]으로 옮겨 발음한다 — 못 알아먹는다[모다라멍는다],
+  // '못 올 일이'[모돌 이리](국립국어원 온라인가나다, 부정부사 '못'의 발음).
+  // 조사·어미 앞 연음(제13항: 옷이[오시], 못을[모슬])과 합성어 ㄴ 첨가(제29항:
+  // 나랏일[나란닐])는 어절 경계가 아니므로 제외한다. 경계에 어절을 삽입하면
+  // 기존 어말 대표음(제9항) → link3 경로가 그대로 표준 발음을 만든다.
+  final adverbBoundaries = <int>{};
+  {
+    int si = 0; // cursor over string, skipping original spaces
+    for (int j = 0; j < tokens.length; j++) {
+      final (surface, rawTag) = tokens[j];
+      final tag = rawTag.split('+').last;
+      var consumed = 0;
+      while (consumed < surface.length) {
+        if (string[si] != ' ') consumed++;
+        si++;
+      }
+      final next = j + 1 < tokens.length ? tokens[j + 1] : null;
+      final nextIsContent = next != null &&
+          next.$2
+              .split('+')
+              .any((p) => p.isNotEmpty && 'NVM'.contains(p[0]));
+      if (next != null &&
+          nextIsContent &&
+          tag.isNotEmpty &&
+          tag[0] == 'M' &&
+          'ᆮᆺᆻᆽᆾᇀ'.contains(_lastJamo(surface)) &&
+          h2j(next.$1[0]).startsWith('ᄋ') &&
+          si < string.length &&
+          string[si] != ' ') {
+        adverbBoundaries.add(si - 1);
+      }
+    }
+  }
+
   final out = StringBuffer();
   for (int i = 0; i < string.length; i++) {
     final char = string[i];
@@ -135,6 +176,9 @@ String annotate(String string, MorphAnalyzer mecab) {
       if ('ᆫᆬᆷᆱᆰᆲᆴ'.contains(_lastJamo(char))) out.write('/P');
     } else if (tag == 'B') {
       out.write('/B');
+    }
+    if (adverbBoundaries.contains(i)) {
+      out.write(' ');
     }
   }
   return out.toString();

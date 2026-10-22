@@ -384,6 +384,75 @@ void main() {
       }));
       expect(g2pMecab.call('나랏일'), equals('나란닐'));
     });
+
+    test('adverb ㄷ-series coda + vowel-initial content links as [ㄷ] (제9항·제15항)',
+        () {
+      // 붙여 쓴 부사 '못'을 mecab이 못/알아먹는다로 분석하면 어절 경계를 만들어
+      // ㅅ의 대표음 [ㄷ]으로 연음한다: 못알아먹는다[모다라멍는다].
+      // 근거: 표준 발음법 제9항(어말 ㄷ류 대표음 [ㄷ])·제15항(실질 형태소 앞
+      // 대표음 연결), 국립국어원 온라인가나다 '부정부사 못의 발음'
+      // ('못 올 일이'[모돌 이리], '못 잊어'[몬니저]).
+      final g2pMecab = G2p(mecab: _MappingAnalyzer({
+        '못알아먹는다': [('못', 'MAG'), ('알아먹', 'VV'), ('는다', 'EF')],
+        '못읽은': [('못', 'MAG'), ('읽', 'VV'), ('은', 'ETM')],
+        '못옵니까': [('못', 'MAG'), ('옵', 'VV'), ('니까', 'EF')],
+        '못 알아먹는다': [
+          ('못', 'MAG'),
+          ('알아먹', 'VV'),
+          ('는다', 'EF')
+        ],
+        '곧없다': [('곧', 'MAG'), ('없', 'VA'), ('다', 'EF')],
+      }));
+
+      expect(g2pMecab.call('못알아먹는다'), equals('모 다라멍는다'));
+      expect(g2pMecab.call('못읽은'), equals('모 딜근'));
+      expect(g2pMecab.call('못옵니까'), equals('모 돔니까'));
+      expect(g2pMecab.call('곧없다'), equals('고 덥따'));
+      // 이미 띄어 쓴 입력은 이중 공백 없이 동일 결과
+      expect(g2pMecab.call('못 알아먹는다'), equals(g2pMecab.call('못알아먹는다')));
+    });
+
+    test('compound-tag next morpheme still counts as content (VV+EF)', () {
+      // mecab이 '옵니까'를 VV+EF 한 토큰으로 내도 실질 어간(V)이 보이면
+      // 부사 경계가 적용된다.
+      final g2pMecab = G2p(mecab: _MappingAnalyzer({
+        '못옵니까': [('못', 'MAG'), ('옵니까', 'VV+EF')],
+      }));
+      expect(g2pMecab.call('못옵니까'), equals('모 돔니까'));
+    });
+
+    test('josa/eomi after dIEUT coda keeps in-word linking (제13항)', () {
+      // 수정 금지 대조군 — 부사 경계 삽입이 조사·어미 연음을 망치면 안 된다.
+      final g2pMecab = G2p(mecab: _MappingAnalyzer({
+        '못이': [('못', 'NNG'), ('이', 'JKS')],
+        '잘못을': [('잘못', 'MAG'), ('을', 'JKO')],
+        '못하다': [('못', 'MAG'), ('하', 'XSV'), ('다', 'EF')],
+        '못할': [('못', 'MAG'), ('할', 'VV+ETX')],
+      }));
+
+      expect(g2pMecab.call('못이'), equals('모시')); // 명사 못+조사: 옷이[오시]급
+      expect(g2pMecab.call('잘못을'), equals('잘모슬')); // 조사 을: 제13항 연음
+      expect(g2pMecab.call('못하다'), equals('모타다')); // ㅇ 아님: 경계 없음
+      expect(g2pMecab.call('못할'), equals('모탈'));
+    });
+
+    test('annotate inserts adverb boundary only for attached input', () {
+      expect(
+          annotate('못알아먹는다',
+              _FakeAnalyzer([('못', 'MAG'), ('알아먹', 'VV'), ('는다', 'EF')])),
+          equals('못 알아먹는다'));
+      // 이미 띄어 쓴 경계는 이중 공백 없이 유지
+      expect(
+          annotate('못 알아먹는다',
+              _FakeAnalyzer([('못', 'MAG'), ('알아먹', 'VV'), ('는다', 'EF')])),
+          equals('못 알아먹는다'));
+      // 명사 못+조사는 경계 없음
+      expect(annotate('못이', _FakeAnalyzer([('못', 'NNG'), ('이', 'JKS')])),
+          equals('못이'));
+      // 부사+조사(형식 형태소)도 경계 없음
+      expect(annotate('잘못을', _FakeAnalyzer([('잘못', 'MAG'), ('을', 'JKO')])),
+          equals('잘못을'));
+    });
   });
 
   group('Exceptions and Edge Cases', () {
