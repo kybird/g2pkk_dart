@@ -1,6 +1,7 @@
 name: g2pkk
 description: Korean Grapheme-to-Phoneme conversion library for Dart. A port of the Python g2pK library.
 version: 0.1.0
+publish_to: none
 repository: https://github.com/kyubyong/g2pK
 
 environment:
