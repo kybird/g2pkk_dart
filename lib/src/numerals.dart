@@ -300,7 +300,11 @@ String convertNum(String string) {
         final boundMatch = RegExp(r'^([ㄱ-힣]+)/B').firstMatch(remaining);
         if (boundMatch != null) {
           final bn = boundMatch.group(1)!;
-          final usePureKorean = boundNounSet.contains(bn);
+          // Both sets count: boundNounSet (g2pkk original) and
+          // pureKoreanCounterSet (common counters like 명) — otherwise
+          // mecab /B markers regress '2명' to sino-Korean [이명].
+          final usePureKorean =
+              boundNounSet.contains(bn) || pureKoreanCounterSet.contains(bn);
           final spelledOut = processNum(numStr, sino: !usePureKorean);
           buffer.write(spelledOut);
           buffer.write(bn);

@@ -356,6 +356,19 @@ void main() {
       expect(g2pMecab.call('3개'), equals('세개'));
     });
 
+    test('G2p with analyzer: /B bound noun uses pure-Korean counters too', () {
+      // '명'은 pureKoreanCounterSet에는 있지만 boundNounSet에는 없는 단위명사 —
+      // /B 경로가 이를 놓치면 '2명'이 [이명](한자수)으로 회귀한다.
+      final analyzer = _MappingAnalyzer({
+        '2명': [('2', 'SN'), ('명', 'NNBC')],
+        '3개': [('3', 'SN'), ('개', 'NNBC')],
+      });
+      final g2pMecab = G2p(mecab: analyzer);
+
+      expect(g2pMecab.call('2명'), equals('두명'));
+      expect(g2pMecab.call('3개'), equals('세개'));
+    });
+
     test('G2p without analyzer keeps mecab-less behavior', () {
       final g2p = G2p();
       expect(g2p.call('앉다'), equals('안다'));
