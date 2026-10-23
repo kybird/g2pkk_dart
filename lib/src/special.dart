@@ -188,7 +188,12 @@ String verbNieun(String inp, bool descriptive, bool verbose) {
 String balb(String inp, bool descriptive, bool verbose) {
   const rule = '제10항 받침 \'ㄼ\'의 발음';
   String out = inp;
-  final syllableFinalOrConsonants = r'($|[^ᄋᄒ])';
+  // 어말 또는 ㅇ/ㅎ 외 자음 앞에서만 밟-→밥 예외 적용.
+  // '/' 도 제외한다 — mecab annotate 마커(/Patchet)가 ㄼ 뒤에 붙으면 마커를
+  // '자음 앞'으로 오판해 밟았다를 밥았다로 만들고, 뒤따르는 모음 어미의
+  // 제14항 연음(ㄼ+ㅇ→ㄹ+ㅂ, [발바따])을 영원히 막았다(2026-10-23 실측).
+  // 마커 뒤 자음 어미(밟고류)는 Rule 25(rieulbieub)가 양성 매칭으로 처리한다.
+  final syllableFinalOrConsonants = r'($|[^ᄋᄒ/])';
 
   // Exceptions
   out = out.replaceAllMapped(
