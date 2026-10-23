@@ -589,10 +589,19 @@ void main() {
       expect(g2p.call('신라'), equals('실라'));
     });
 
-    test('A1: ㄹ받침+ㄷ 경음화 (제23항 — 길다[길따] 계열)', () {
-      expect(g2p.call('설 대장이'), equals('설 때장이'));
-      expect(g2p.call('길다'), equals('길따'));
-      expect(g2p.call('멀다'), equals('멀따'));
+    test('A1 철회(2026-10-23 원상복구): ㄹ받침+ㄷ는 경계·어절 내부 모두 평음 — g2pk2·Python과 동일', () {
+      // f888e9b가 잠시 추가했던 테이블 ᆯ행 ㄷ열 셀(ᆯ\1ᄄ(23))은 ( ?) 공백 통과로
+      // 모든 어절 경계 ㄹ+ㄷ를 경음화했다(정말 대단하다[정말 때단하다] — 사용자
+      // 청감 보고). g2pk2(GSV 원래 변환기) 실측: 경계 전부 평음, 3976 전문 1건만
+      // 예외. 표준발음법에도 어절 경계 경음화 조항 없음(제23항은 '한 단어 안/
+      // 곡용/활용' 한정, ㄹ은 받침 목록에 없음). 어절 내부(길다)도 g2pk2·Python
+      // g2pkk가 평음이라 통일 — 원상복구. 상세: docs/raw/2026-10-23.md Case 6.
+      expect(g2p.call('설 대장이'), equals('설 대장이'));
+      expect(g2p.call('정말 대단하다'), equals('정말 대단하다'));
+      expect(g2p.call('그걸 대단하다고'), equals('그걸 대단하다고'));
+      expect(g2p.call('날 도전'), equals('날 도전'));
+      expect(g2p.call('길다'), equals('길다'));
+      expect(g2p.call('멀다'), equals('멀다'));
     });
 
     test('A2: 부사 ㄷ류 + 서술격 이(VCP)는 어절 경계가 아니다 — 제15항 실질 형태소 아님', () {
@@ -634,11 +643,11 @@ void main() {
       expect(g2pMecab.call('신다'), equals('신따'));
       expect(g2pMecab.call('못알아먹는다'), equals('모 다라멍는다'));
 
-      // linkAcrossSpace 양 모드에서 경계 유음화·경음화 수정은 동일하게 적용
+      // linkAcrossSpace 양 모드에서 경계 유음화 수정은 동일하게 적용
       expect(g2p.call('이끈 리더', linkAcrossSpace: false),
           equals('이끈 리더'));
       expect(g2p.call('설 대장이', linkAcrossSpace: false),
-          equals('설 때장이'));
+          equals('설 대장이'));
     });
   });
 }
