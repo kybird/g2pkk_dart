@@ -11,7 +11,8 @@ tags: [index]
 
 | 개념 | 설명 | 별칭 |
 |------|------|------|
-| [[g2pkk-mecab-less-limits]] | 형태소 분석기 없이는 표면 문자열이 같은 두 발음 현상을 구분할 수 없어, | mecab-less 한계, 사이시옷 구분 불가 |
+| [[g2pkk-mecab-less-limits]] | 형태소 분석기 없이는 표면 문자열이 같은 두 발음 현상을 구분할 수 없어, | mecab-less 한계, 사이시옷 구분 불가, 밟 넓 ㄼ 모음 어미, 잘못이라는 서술격 |
+| [[word-boundary-assimilation-policy]] | 규칙 테이블의 초성 패턴 `( ?)X`는 공백 한 칸을 옵션으로 통과시켜, 자음 동화· | 어절 경계 유음화, 경계 유음화 과잉, 이끈 리더, 제5항 어절 단위, ㄹ받침 ㄷ 경음화, 경계 경음화 비적용, guardCrossSpaceLiquidization, boundaryGuardChar |
 
 ---
 
@@ -39,7 +40,7 @@ tags: [index]
 
 ## Statistics
 
-- Total concepts: 1
+- Total concepts: 2
 - Total patterns: 1
 - Total anti-patterns: 0
 - Total answers: 0
