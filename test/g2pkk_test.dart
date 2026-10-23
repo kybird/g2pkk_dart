@@ -558,6 +558,89 @@ void main() {
       );
     });
   });
+
+  group('청감 리포트 결함 수리 (2026-10-23)', () {
+    final g2p = G2p();
+
+    test('E: ㄼ(밟/넓)+모음 어미 — ㄹ 연음·ㅂ 병존 (국립국어원 FAQ ㄼ)', () {
+      // 주: ㅅ계 받침+ㄷ의 이중 표기 관례(있다→읻따, 끼웠다→끼웓따 — 세 변환기
+      // 공유 관례)로 표준 병합형 [발바따]는 [발받따]로 실현된다. 이 수리의
+      // 본체인 'ㄹ 실종(바받따)'는 g2pk2·Python에만 있고 Dart 포트는 이미
+      // balb 제외 클래스(조합 자모 U+110B/U+1112)가 정확해 정상이다.
+      expect(g2p.call('밟았다'), equals('발받따'));
+      expect(g2p.call('밟으면'), equals('발브면'));
+      expect(g2p.call('밟을수록'), equals('발블쑤록'));
+      expect(g2p.call('밟아'), equals('발바'));
+      // 자음 앞·어말은 '밟-'만 [ㅂ]인 예외 유지, 넓-은 ㄹ 보존 유지
+      expect(g2p.call('밟다'), equals('밥따'));
+      expect(g2p.call('밟고'), equals('밥꼬'));
+      expect(g2p.call('넓혔다'), equals('널펻따'));
+      expect(g2p.call('넓으면'), equals('널브면'));
+    });
+
+    test('F: 어절 경계 유음화 과잉 수정 (제5항 — 제20항은 어절 내부로 한정)', () {
+      // ㄴ류 받침 어절 + ㄹ 초성 어절 / ㄹ 받침 어절 + ㄴ 초성 어절 경계는
+      // 받침을 유지한다. 제20항 유음화의 예시(난로·신라·천리)는 전부 단어 내부.
+      expect(g2p.call('이끈 리더'), equals('이끈 리더'));
+      expect(g2p.call('물 노래'), equals('물 노래'));
+      expect(g2p.call('신 라디오'), equals('신 라디오'));
+      // 어절 내부 유음화는 그대로
+      expect(g2p.call('난로'), equals('날로'));
+      expect(g2p.call('신라'), equals('실라'));
+    });
+
+    test('A1: ㄹ받침+ㄷ 경음화 (제23항 — 길다[길따] 계열)', () {
+      expect(g2p.call('설 대장이'), equals('설 때장이'));
+      expect(g2p.call('길다'), equals('길따'));
+      expect(g2p.call('멀다'), equals('멀따'));
+    });
+
+    test('A2: 부사 ㄷ류 + 서술격 이(VCP)는 어절 경계가 아니다 — 제15항 실질 형태소 아님', () {
+      final g2pMecab = G2p(mecab: _MappingAnalyzer({
+        '잘못이라는': [('잘못', 'MAG'), ('이', 'VCP'), ('라는', 'ETM')],
+        '잘못이라네': [('잘못', 'MAG'), ('이', 'VCP'), ('라네', 'EF')],
+        '곧이다': [('곧', 'MAG'), ('이', 'VCP'), ('다', 'EF')],
+        '못 이겨서': [('못', 'MAG'), ('이겨', 'VV'), ('서', 'EC')],
+      }));
+
+      // 명사 잘못 + 서술격 '이': 단어내 연음(제13항) — 오탐 수정 본체
+      expect(g2pMecab.call('잘못이라는'), equals('잘모시라는'));
+      expect(g2pMecab.call('잘못이라네'), equals('잘모시라네'));
+      // 서술격 '이' 뒤 구개음화(제19항) 경로도 회복: 곧이다[고지다]
+      expect(g2pMecab.call('곧이다'), equals('고지다'));
+      // 대조: 실질 형태소(용언) 앞 경계는 유지 — 기존 제15항 수정 회귀
+      expect(g2pMecab.call('못 이겨서'), equals('모 디겨서'));
+    });
+
+    test('C 정책: 어절 경계 ㄹ+ㅂ/ㅅ/ㅈ 경음화는 비적용 (허용발음, 제5항 틀 통일)', () {
+      // g2pk2는 [날빼신]을 내지만 ㄹ받침 뒤 ㅂ/ㅅ/ㅈ 경음화는 허용발음이다.
+      // F(유음화 경계 미적용)와 같은 제5항 틀에서 2026-10-23 비적용으로 확정.
+      expect(g2p.call('날 배신'), equals('날 배신'));
+      expect(g2p.call('날 배신하지만'), equals('날 배신하지만'));
+      expect(g2p.call('가실 심산이시오'), equals('가실 심사니시오'));
+    });
+
+    test('배터리 잔여 회귀 (기존 분포 불변)', () {
+      // 끼웠다: ㅆ+ㄷ 이중 표기 관례(D) 유지 — 병합형[끼워따]는 별개 미결 항목
+      expect(g2p.call('끼웠다'), equals('끼웓따'));
+      expect(g2p.call('있다'), equals('읻따'));
+
+      final g2pMecab = G2p(mecab: _MappingAnalyzer({
+        '앉다': [('앉', 'VV'), ('다', 'EF')],
+        '신다': [('신', 'VV'), ('다', 'EF')],
+        '못알아먹는다': [('못', 'MAG'), ('알아먹', 'VV'), ('는다', 'EF')],
+      }));
+      expect(g2pMecab.call('앉다'), equals('안따'));
+      expect(g2pMecab.call('신다'), equals('신따'));
+      expect(g2pMecab.call('못알아먹는다'), equals('모 다라멍는다'));
+
+      // linkAcrossSpace 양 모드에서 경계 유음화·경음화 수정은 동일하게 적용
+      expect(g2p.call('이끈 리더', linkAcrossSpace: false),
+          equals('이끈 리더'));
+      expect(g2p.call('설 대장이', linkAcrossSpace: false),
+          equals('설 때장이'));
+    });
+  });
 }
 
 /// Fake analyzer returning a fixed token list regardless of input.

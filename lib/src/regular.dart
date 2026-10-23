@@ -120,6 +120,32 @@ String link4(String inp, bool descriptive, bool verbose) {
   return out;
 }
 
+/// 제5항·제20항: 어절 경계를 넘는 유음화 차단용 경계 보호.
+///
+/// 규칙 테이블은 `받침( ?)초성` 꼴로 공백 한 칸도 통과시킨다. 유음화(제20항)의
+/// 예시는 모두 한 어절 내부(난로·신라·천리)이고 제5항이 어절 단위 발음의
+/// 원칙이므로, ㄴ류 받침+ㄹ 초성·ㄹ류 받침+ㄴ 초성 경계('이끈 리더'·'물
+/// 노래')에서는 받침을 바꾸지 않는다. 테이블 적용 직전에 이 경계들의 공백을
+/// 임시 마커(U+200B)로 바꾸고 [restoreCrossSpaceLiquidization]으로 복원한다.
+/// link3(경계 연음 재분절) 등 다른 어절 경계 규칙은 건드리지 않는다.
+const boundaryGuardChar = '\u200B';
+
+/// 유음화 셀(→ ㄹㄹ)에 해당하는 어절 경계만 보호한다.
+String guardCrossSpaceLiquidization(String inp) => inp
+    .replaceAllMapped(
+      RegExp(r'([ᆫᆬᆭᆲᆳᆴᆶ]) (ᄅ)'),
+      (m) => '${m.group(1)}$boundaryGuardChar${m.group(2)}',
+    )
+    .replaceAllMapped(
+      RegExp(r'([ᆯᆳᆴᆶ]) (ᄂ)'),
+      (m) => '${m.group(1)}$boundaryGuardChar${m.group(2)}',
+    );
+
+/// [guardCrossSpaceLiquidization]이 삽입한 마커를 공백으로 되돌린다.
+/// 입력에 원래 섞여 있던 U+200B도 함께 공백이 된다(무해 — 표기 문자일 뿐).
+String restoreCrossSpaceLiquidization(String inp) =>
+    inp.replaceAll(boundaryGuardChar, ' ');
+
 /// Apply all link rules in sequence
 ///
 /// [linkAcrossSpace]: 어절 경계(공백)를 넘는 연음 재분절(link3)을 적용할지.

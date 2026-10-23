@@ -132,8 +132,10 @@ String annotate(String string, MorphAnalyzer mecab) {
   // 모음으로 시작하면 대표음 [ㄷ]으로 옮겨 발음한다 — 못 알아먹는다[모다라멍는다],
   // '못 올 일이'[모돌 이리](국립국어원 온라인가나다, 부정부사 '못'의 발음).
   // 조사·어미 앞 연음(제13항: 옷이[오시], 못을[모슬])과 합성어 ㄴ 첨가(제29항:
-  // 나랏일[나란닐])는 어절 경계가 아니므로 제외한다. 경계에 어절을 삽입하면
-  // 기존 어말 대표음(제9항) → link3 경로가 그대로 표준 발음을 만든다.
+  // 나랏일[나란닐])는 어절 경계가 아니므로 제외한다. 서술격 조사 '이'(VCP)도
+  // 형식 형태소라 제외 — 잘못이라는[잘모시라는]·곧이다[고지다]는 단어내 경로를
+  // 탄다(2026-10-23 오탐 수정). 경계에 어절을 삽입하면 기존 어말 대표음(제9항)
+  // → link3 경로가 그대로 표준 발음을 만든다.
   final adverbBoundaries = <int>{};
   {
     int si = 0; // cursor over string, skipping original spaces
@@ -146,10 +148,11 @@ String annotate(String string, MorphAnalyzer mecab) {
         si++;
       }
       final next = j + 1 < tokens.length ? tokens[j + 1] : null;
+      // VCP(서술격 '이')는 형식 형태소 — 제15항의 '실질 형태소'가 아니다.
       final nextIsContent = next != null &&
           next.$2
               .split('+')
-              .any((p) => p.isNotEmpty && 'NVM'.contains(p[0]));
+              .any((p) => p.isNotEmpty && p != 'VCP' && 'NVM'.contains(p[0]));
       if (next != null &&
           nextIsContent &&
           tag.isNotEmpty &&
