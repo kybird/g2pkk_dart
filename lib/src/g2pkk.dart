@@ -318,6 +318,13 @@ class G2p {
   /// - [verbose]: If true, prints detailed transformation steps
   /// - [groupVowels]: If true, normalizes similar vowels (ㅐ/ㅔ, etc.)
   /// - [toSyl]: If true, composes jamo back into syllables
+  /// - [linkAcrossSpace]: If false, skips cross-word-boundary linking (link3)
+  ///   — the final consonant stays on the left syllable and the next word's
+  ///   onset ㅇ is written explicitly ('검은 에쿠스' stays '검은 에쿠스' instead
+  ///   of '검으 네쿠스'). Same phone sequence; g2pk2-notation pairing for
+  ///   engines whose pretrained weights were trained on that spelling
+  ///   (GPT-SoVITS). Default true preserves the historical distribution
+  ///   (Matcha-trained labels).
   ///
   /// Returns the phonetic representation of the input text.
   ///
@@ -332,6 +339,7 @@ class G2p {
     bool verbose = false,
     bool groupVowels = false,
     bool toSyl = true,
+    bool linkAcrossSpace = true,
   }) {
     // Step 1: Process idioms
     string = _processIdioms(string, verbose);
@@ -390,7 +398,8 @@ class G2p {
     }
 
     // Step 8: Apply link rules
-    inp = applyLinkRules(inp, descriptive, verbose);
+    inp = applyLinkRules(inp, descriptive, verbose,
+        linkAcrossSpace: linkAcrossSpace);
 
     // Step 9: Post-processing
     if (groupVowels) {
@@ -413,6 +422,7 @@ class G2p {
     bool verbose = false,
     bool groupVowels = false,
     bool toSyl = true,
+    bool linkAcrossSpace = true,
   }) {
     return call(
       string,
@@ -420,6 +430,7 @@ class G2p {
       verbose: verbose,
       groupVowels: groupVowels,
       toSyl: toSyl,
+      linkAcrossSpace: linkAcrossSpace,
     );
   }
 }

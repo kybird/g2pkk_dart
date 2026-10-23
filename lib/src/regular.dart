@@ -121,11 +121,21 @@ String link4(String inp, bool descriptive, bool verbose) {
 }
 
 /// Apply all link rules in sequence
-String applyLinkRules(String inp, bool descriptive, bool verbose) {
+///
+/// [linkAcrossSpace]: 어절 경계(공백)를 넘는 연음 재분절(link3)을 적용할지.
+/// 기본 true(기존 동작 — Matcha 계열 라벨의 학습 분포). false면 경계에서
+/// 받침을 왼쪽 음절에 유지하고 다음 어절의 초성 ㅇ을 명시하는 표기가 된다
+/// (예: '검은 에쿠스'가 '검으 네쿠스'가 아니라 '검은 에쿠스'로 남음).
+/// 음소열은 양 표기가 동일하며 — 이는 GPT-SoVITS 배포 가중치가 학습한
+/// g2pk2 계열 표기 분포와 짝을 맞추는 용도(2026-10-22).
+String applyLinkRules(String inp, bool descriptive, bool verbose,
+    {bool linkAcrossSpace = true}) {
   String out = inp;
   out = link1(out, descriptive, verbose);
   out = link2(out, descriptive, verbose);
-  out = link3(out, descriptive, verbose);
+  if (linkAcrossSpace) {
+    out = link3(out, descriptive, verbose);
+  }
   out = link4(out, descriptive, verbose);
   return out;
 }

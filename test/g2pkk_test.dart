@@ -523,6 +523,41 @@ void main() {
       }
     });
   });
+  group('linkAcrossSpace (boundary notation)', () {
+    final g2p = G2p();
+
+    test('default: cross-space linking resyllabifies (historical distribution)', () {
+      expect(g2p.call('검은 에쿠스'), equals('거므 네쿠스'));
+      expect(g2p.call('다는 이미'), equals('다느 니미'));
+    });
+
+    test('linkAcrossSpace=false keeps batchim + explicit onset ㅇ (g2pk2 notation)', () {
+      expect(
+        g2p.call('검은 에쿠스', linkAcrossSpace: false),
+        equals('거믄 에쿠스'),
+      );
+      expect(
+        g2p.call('다는 이미', linkAcrossSpace: false),
+        equals('다는 이미'),
+      );
+    });
+
+    test('within-word linking is unaffected by the flag', () {
+      expect(g2p.call('한국어', linkAcrossSpace: false), equals('한구거'));
+      expect(g2p.call('한국어'), equals('한구거'));
+    });
+
+    test('idiom table (saisiot fix) survives both notations', () {
+      expect(g2p.call('나랏일', linkAcrossSpace: false), equals('나란닐'));
+    });
+
+    test('jamo output (toSyl:false) boundary forms', () {
+      expect(
+        g2p.call('검은 에쿠스', toSyl: false, linkAcrossSpace: false),
+        equals('거믄 에쿠스'),
+      );
+    });
+  });
 }
 
 /// Fake analyzer returning a fixed token list regardless of input.
@@ -544,4 +579,5 @@ class _MappingAnalyzer implements MorphAnalyzer {
   @override
   List<(String, String)> pos(String text) =>
       table[text] ?? const <(String, String)>[];
+
 }
