@@ -650,6 +650,32 @@ void main() {
           equals('설 대장이'));
     });
   });
+
+  group('한자어 ㄴ받침+ㄹ 사전 표기 예외 (2026-10-24)', () {
+    final g2p = G2p();
+
+    test('G: 추진력[추진녁] — 제20항 일반 유음화가 아닌 사전 예외, idioms에 추가', () {
+      // 국립국어원 온라인가나다(qna_seq=329674): 생산량[생산냥]은 'ㄹ'이 [ㄴ]으로
+      // 바뀌는 예외이고, 제20항 일반(신라[실라]·진리[질리])과 공존한다. 같은
+      // ㄴ받침 환경이라도 권력[궐력]은 유음화라 규칙화 불가 — 결단력·생산량·
+      // 공권력 부류와 동일하게 단어 등재(idioms)로만 담당한다. g2pk2·Python
+      // g2pkk도 일반 규칙+목록 구조라 추진력이 목록에 없으면 [추질력].
+      expect(g2p.call('결국 남는 것은 불도저 같은 추진력'),
+          equals('결궁 남는 거슨 불도저 가튼 추진녁'));
+      expect(g2p.call('추진력'), equals('추진녁'));
+      expect(g2p.call('추진력을'), equals('추진녀글'));
+      // 결궁은 ㄹ+ㄱ 경음화가 아니라 국(ᆨ)+남는(ᄂ) 경계의 제18항 비음화다.
+      // 단독 '결국'에는 아무 규칙도 적용되지 않는다(A1과 같은 ㄹ+파열음 평음 정책).
+      expect(g2p.call('결국'), equals('결국'));
+      expect(g2p.call('결국 남는'), equals('결궁 남는'));
+      // 제20항 일반·idioms 부류·제19항(ᆷ/ᆼ+ㄹ→ᆫ)·경계 유음화 가드는 불변
+      expect(g2p.call('진리'), equals('질리'));
+      expect(g2p.call('권력'), equals('궐력'));
+      expect(g2p.call('생산량'), equals('생산냥'));
+      expect(g2p.call('대통령'), equals('대통녕'));
+      expect(g2p.call('이끈 리더'), equals('이끈 리더'));
+    });
+  });
 }
 
 /// Fake analyzer returning a fixed token list regardless of input.
